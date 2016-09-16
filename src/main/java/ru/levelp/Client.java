@@ -8,15 +8,13 @@ import java.net.Socket;
 
 public class Client {
     private Socket socket;
-    private ClientManager clientManager;
     private BufferedReader reader;
     private PrintWriter writer;
     private SendingThread sender;
     private String username;
 
-    public Client(Socket socket, ClientManager clientManager) {
+    public Client(Socket socket) {
         this.socket = socket;
-        this.clientManager = clientManager;
         prepareStreams();
     }
 
@@ -36,19 +34,27 @@ public class Client {
      * Метод авторизации
      */
     public void login() {
-        try {
-            username = reader.readLine();
-            clientManager.onClientSignedIn(this);
-        } catch (IOException e) {
-            e.printStackTrace();
+        while (username == null) {
+            try {
+                String username = reader.readLine();
+                if (ClientManager.getInstance().hasClient(username)) {
+                    writer.println("Client with same username exists\nTry another username");
+                    writer.flush();
+                } else {
+                    this.username = username;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+        ClientManager.getInstance().onClientSignedIn(this);
     }
 
     /**
      * Запуск основной работы с клиентом (открывается возможность переписки)
      */
     public void startMessaging() {
-        sender = new SendingThread(clientManager);
+        sender = new SendingThread();
         sender.start();
         try {
             while (true) {
@@ -68,6 +74,7 @@ public class Client {
      * Отключение клиента
      */
     public void stopClient() {
+        ClientManager clientManager = ClientManager.getInstance();
         clientManager.onClientDisconnected(this);
         sender.stopSending();
         try {
@@ -80,20 +87,31 @@ public class Client {
 
     /**
      * Событие получения сообщения
+     *
      * @param message полученное сообщение в необработанном виде
      */
     public void onMessageReceived(String message) {
         //TODO: message (json) -> message (object)
+//        Message messageObj = parser.fromJson(message);
+//        if (messageObj.getReceiver().equals("server")) {
+//            //...
+//        } else {
         sender.addMessage(message); //object
+//        }
     }
 
     /**
      * Метод отправки сообщений
+     *
      * @param message отправляемое сообщение //TODO: type -> Message
      */
     public void sendMessage(String message) {
         //TODO: message to json
         writer.println(message);
         writer.flush();
+    }
+
+    public String getUsername() {
+        return username;
     }
 }

@@ -1,15 +1,13 @@
 package ru.levelp;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 
+
 public class SendingThread extends Thread {
-    private ClientManager clientManager;
-    private ArrayList<String> queue; //TODO: <Message>
+    private volatile ArrayList<String> queue; //TODO: <Message>
     private boolean alive = true;
 
-    public SendingThread(ClientManager clientManager) {
-        this.clientManager = clientManager;
+    public SendingThread() {
         queue = new ArrayList<>();
     }
 
@@ -19,13 +17,14 @@ public class SendingThread extends Thread {
             if (queue.isEmpty()) {
                 Thread.yield();
             } else if (alive){
-                clientManager.sendMessage(queue.get(0), null);
+                ClientManager.getInstance().sendMessage(queue.get(0), null);
                 queue.remove(0);
             }
         }
     }
 
     //TODO: message -> type Message
+    //main-thread
     public void addMessage(String message) {
         queue.add(message);
     }
