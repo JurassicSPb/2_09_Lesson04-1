@@ -1,22 +1,33 @@
 package ru.levelp;
 
+import com.google.gson.Gson;
+import ru.levelp.dao.MessageDatabase;
+import ru.levelp.entities.Message;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class Client {
+public class ClientWorker {
     private Socket socket;
     private BufferedReader reader;
     private PrintWriter writer;
     private SendingThread sender;
     private String username;
+//    private MessageDAO messageDatabase;
 
-    public Client(Socket socket) {
+    public ClientWorker(Socket socket) {
         this.socket = socket;
         prepareStreams();
     }
+
+//    public ClientWorker(Socket socket, MessageDAO messageDatabase) {
+//        this.socket = socket;
+//        this.messageDatabase = messageDatabase;
+//        prepareStreams();
+//    }
 
     /**
      * Метод открытия потоков ввода-вывода
@@ -91,12 +102,20 @@ public class Client {
      * @param message полученное сообщение в необработанном виде
      */
     public void onMessageReceived(String message) {
-        //TODO: message (json) -> message (object)
-//        Message messageObj = parser.fromJson(message);
-//        if (messageObj.getReceiver().equals("server")) {
-//            //...
-//        } else {
-        sender.addMessage(message); //object
+        Message messageObj = new Gson().fromJson(message, Message.class);
+        MessageDatabase.getInstance().add(messageObj);
+        if (messageObj.getReceiver() != null && messageObj.getReceiver().equals("server")) {
+            //..
+            if (messageObj.getMessage().equals("getHistory")) {
+                //getting history from db
+                //prepare response
+                //send response
+            }
+        } else {
+            sender.addMessage(messageObj); //object
+        }
+//        for (Message m : MessageDatabase.getInstance().getAll()) {
+//            System.out.println(m.getMessage());
 //        }
     }
 

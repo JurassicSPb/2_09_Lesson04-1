@@ -1,5 +1,8 @@
 package ru.levelp;
 
+import com.google.gson.Gson;
+import ru.levelp.entities.Message;
+
 import java.util.ArrayList;
 
 
@@ -8,7 +11,7 @@ public class SendingThread extends Thread {
     private boolean alive = true;
 
     public SendingThread() {
-        queue = new ArrayList<>();
+        queue = new ArrayList<String>();
     }
 
     @Override
@@ -23,10 +26,9 @@ public class SendingThread extends Thread {
         }
     }
 
-    //TODO: message -> type Message
     //main-thread
-    public void addMessage(String message) {
-        queue.add(message);
+    public void addMessage(Message message) {
+        queue.add(new Gson().toJson(message));
     }
 
     public void stopSending() {

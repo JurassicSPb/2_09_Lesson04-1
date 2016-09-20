@@ -8,7 +8,7 @@ import java.util.ArrayList;
  */
 public class ClientManager {
     private static ClientManager instance = new ClientManager();
-    private ArrayList<Client> clients = new ArrayList<>();
+    private ArrayList<ClientWorker> clients = new ArrayList<ClientWorker>();
 
     private ClientManager() {
     }
@@ -28,9 +28,11 @@ public class ClientManager {
      * @param socket - сокет клиента
      */
     public void onClientConnected(final Socket socket) {
-        Thread thread = new Thread(() -> {
-            Client client = new Client(socket);
-            client.login();
+        Thread thread = new Thread(new Runnable() {
+            public void run() {
+                ClientWorker client = new ClientWorker(socket);
+                client.login();
+            }
         });
 //        thread.setDaemon(true);
         thread.start();
@@ -41,7 +43,7 @@ public class ClientManager {
      *
      * @param client авторизованный клиент
      */
-    public void onClientSignedIn(Client client) {
+    public void onClientSignedIn(ClientWorker client) {
         clients.add(client);
         client.startMessaging();
         System.out.println("Client " + client.getUsername() + " connected");
@@ -52,7 +54,7 @@ public class ClientManager {
      *
      * @param client отключаемый клиент
      */
-    public void onClientDisconnected(Client client) {
+    public void onClientDisconnected(ClientWorker client) {
         if (clients.remove(client)) {
             System.out.println("Client " + client.getUsername() + " out");
         }
@@ -66,14 +68,14 @@ public class ClientManager {
      */
     public void sendMessage(String message, String receiver) {
         if (receiver == null && message != null) {
-            for (Client client : clients) {
+            for (ClientWorker client : clients) {
                 client.sendMessage(message);
             }
         }
     }
 
     public boolean hasClient(String username) {
-        for (Client c : clients) {
+        for (ClientWorker c : clients) {
             if (c.getUsername().equals(username)) {
                 return true;
             }
